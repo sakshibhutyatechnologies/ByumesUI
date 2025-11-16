@@ -1,0 +1,106 @@
+.images-container, .gifs-container {
+    padding: 20px;
+    background-color: #f4f4f9;
+    position: relative;
+    display: block;
+    height: 100vh;
+  }
+  
+  .create-new-image-btn, .create-new-gif-btn {
+    margin-bottom: 10px;
+    border-radius: 8px;
+    padding: 15px;
+    background: #007bff;
+    color: white;
+    border: none;
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+  
+  .create-new-image-btn:hover, .create-new-gif-btn:hover {
+    background-color: #0056b3;
+  }
+  
+  .popup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+  }
+  
+  .popup h3 {
+    margin-top: 0;
+  }
+  
+  .popup input,
+  .popup select {
+    width: 95%;
+    margin-bottom: 10px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+  }
+  
+  .popup button {
+    margin-right: 10px;
+    padding: 10px 15px;
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+  
+  .popup button:hover {
+    background: #0056b3;
+  }
+  
+  .card-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+  }
+  
+  .image-card, .gif-card {
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    width: 300px;
+  }
+  
+  .image-card h3, .gif-card h3 {
+    margin-top: 0;
+    font-size: 1.2em;
+    color: #333;
+  }
+  
+  .image-card img, .gif-card img {
+    width: 100%;
+    height: auto;
+    border-radius: 5px;
+  }
+  
+  .save-image-btn, .save-gif-btn {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.3s ease;
+  }
+    
+  .save-image-btn:disabled, .save-gif-btn:disabled {
+    background-color: #ccc; 
+    color: #666; 
+    cursor: not-allowed;
+    pointer-events: none; 
+    opacity: 0.7;
+  }
+  

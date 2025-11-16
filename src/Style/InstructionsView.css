@@ -1,0 +1,37 @@
+.sticky-command-bar {
+  position: sticky;
+  top: 56px; /* below fixed navbar */
+  width: 100%;
+  z-index: 1030;
+  background-color: #fff;
+  border-bottom: 1px solid #dee2e6;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+/* Ensure full width inside container-fluid layout */
+.command-top {
+  width: 100%;
+}
+
+/* Fix spacing for TopInfoBar inside the sticky row */
+.top-info-wrapper {
+  min-width: 300px;
+  max-width: 100%;
+}
+
+/* Optional: Responsive tweaks */
+@media (max-width: 576px) {
+  .command-actions {
+    width: 100%;
+    align-items: stretch;
+  }
+
+  .command-actions .step-nav-container {
+    justify-content: space-between;
+    flex-wrap: wrap;
+  }
+}
+
+.instruction-content{
+  overflow: auto;
+}

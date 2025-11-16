@@ -1,0 +1,42 @@
+/* Pin the navbar to the top on all screens */
+.navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 9999;
+}
+
+/* MOBILE ONLY (<992px): style our React‐controlled “mobile-menu” */
+@media (max-width: 991.98px) {
+  .mobile-menu {
+    position: absolute;
+    top: calc(100% + 0.25rem);
+    left: 0;
+    min-width: 200px;
+    background-color: #fff;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    border-radius: 0.25rem;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    z-index: 1050;
+    padding: 0.25rem 0;
+  }
+
+  /* make each item plain dark text (no Bootstrap link blue) */
+  .mobile-menu .dropdown-item {
+    display: block;
+    width: 100%;
+    padding: 0.5rem 1rem;
+    color: #212529 !important;
+    background-color: transparent;
+    border: none;
+    text-align: left;
+  }
+
+  .mobile-menu .dropdown-item:hover,
+  .mobile-menu .dropdown-item:focus {
+    background-color: #f8f9fa;
+    text-decoration: none;
+    color: #212529;
+  }
+}
