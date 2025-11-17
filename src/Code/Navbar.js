@@ -34,6 +34,9 @@ const Navbar = () => {
     return () => document.removeEventListener('mousedown', onClickOutside);
   }, []);
 
+  // Helper to check permissions for menu visibility
+  const canViewMenu = ['Admin', 'QA', 'Operator'].includes(user?.role);
+
   return (
     <nav className="navbar navbar-expand-lg navbar-dark bg-dark px-3">
       {/* Home icon */}
@@ -57,7 +60,8 @@ const Navbar = () => {
 
         {menuOpen && (
           <ul className="mobile-menu dropdown-menu show">
-            {user?.role === 'Admin' && user?.role ==='QA' &&  user?.role ==='Operator' (
+            {/* LOGIC FIXED HERE: Checks if role is Admin OR QA OR Operator */}
+            {canViewMenu && (
               <>
                 <li>
                   <button
@@ -130,7 +134,8 @@ const Navbar = () => {
       </div>
 
       {/* DESKTOP: horizontal nav + dropdowns */}
-      {user?.role === 'Admin' && (
+      {/* LOGIC FIXED HERE: Checks if role is Admin OR QA OR Operator */}
+      {canViewMenu && (
         <ul className="navbar-nav ms-3 d-none d-lg-flex align-items-center">
           <li className="nav-item">
             <button
