@@ -50,13 +50,26 @@ const OrdersList = () => {
     }
   };
 
-  const fetchMasterInstructionByProductName = async () => {
+ const fetchMasterInstructionByProductName = async () => {
     try {
       const response = await fetch(`${configuration.API_BASE_URL}masterInstructions/productnames`);
       const data = await response.json();
-      setMasterInstructions(data);
+      
+      console.log("Fetched Master Instructions:", data); // Check console to see real structure
+
+      // Check if data is an array, otherwise check if it's inside a property like data.data or data.products
+      if (Array.isArray(data)) {
+        setMasterInstructions(data);
+      } else if (data && Array.isArray(data.data)) {
+         // If backend returns { success: true, data: [...] }
+        setMasterInstructions(data.data);
+      } else {
+        console.error("API response is not an array:", data);
+        setMasterInstructions([]); // Fallback to empty array to prevent crash
+      }
     } catch (error) {
       console.error('Failed to fetch master instructions by product name', error);
+      setMasterInstructions([]); // Fallback on error
     }
   };
 
@@ -162,9 +175,14 @@ const OrdersList = () => {
     }
   };
 
-  const filteredMasterInstructions = masterInstructions.filter(instruction =>
-    instruction.product_name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredMasterInstructions = Array.isArray(masterInstructions) 
+    ? masterInstructions.filter(instruction =>
+        // 1. Match the search term
+        instruction.product_name?.toLowerCase().includes(searchTerm.toLowerCase()) &&
+        // 2. STRICT REQUIREMENT: Only allow approved instructions
+        instruction.status === 'approved'
+      )
+    : [];
 
   const isOrderNameDuplicate = useMemo(() => {
     const duplicate = orders.some(order => order.order_name.trim() === newOrder.order_name.trim());

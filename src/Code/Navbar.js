@@ -57,7 +57,7 @@ const Navbar = () => {
 
         {menuOpen && (
           <ul className="mobile-menu dropdown-menu show">
-            {user?.role === 'Admin' && user?.role ==='QA' &&  user?.role ==='Operator' (
+            {(user?.role === 'Admin' || user?.role ==='QA' || user?.role ==='Operator') && (
               <>
                 <li>
                   <button
@@ -130,7 +130,7 @@ const Navbar = () => {
       </div>
 
       {/* DESKTOP: horizontal nav + dropdowns */}
-      {user?.role === 'Admin' && (
+      {(user?.role === 'Admin' || user?.role ==='QA' || user?.role ==='Operator') && (
         <ul className="navbar-nav ms-3 d-none d-lg-flex align-items-center">
           <li className="nav-item">
             <button

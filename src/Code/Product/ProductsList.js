@@ -2,104 +2,128 @@ import React, { useEffect, useState, useMemo } from 'react';
 import '../../Style/ProductsList.css';
 import configuration from '../../configuration';
 import DocToJsonConverter from '../DocToJsonConverter/DocToJsonConverter';
-import { AiOutlineArrowUp, AiOutlineArrowDown } from 'react-icons/ai';
 
 const ProductsList = () => {
-  const [products, setProducts] = useState([]);
+  const [instructions, setInstructions] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [sortField, setSortField] = useState('product_name');
-  const [sortOrder, setSortOrder] = useState('asc');
   const [showDocPopup, setShowDocPopup] = useState(false);
 
-  useEffect(() => {
-    async function fetchProducts() {
-      try {
-        const res = await fetch(`${configuration.API_BASE_URL}masterInstructions/productnames`);
-        const data = await res.json();
-        setProducts(data);
-      } catch (err) {
-        console.error('Failed to fetch products', err);
+ 
+
+
+  const fetchInstructions = async () => {
+    try {
+      const token = localStorage.getItem('token'); // Get the token from storage
+      
+      const res = await fetch(`${configuration.API_BASE_URL}masterInstructions`, {
+        headers: {
+          'Authorization': `Bearer ${token}` // Send the token
+        }
+      });
+
+      if (res.ok) {
+        setInstructions(await res.json());
+      } else {
+        // If the request fails, log the error and set an empty array
+        console.error('Failed to fetch instructions:', await res.json());
+        setInstructions([]); 
       }
+    } catch (err) {
+      console.error('Failed to fetch instructions', err);
+      setInstructions([]);
     }
-    fetchProducts();
+  };
+
+  useEffect(() => {
+    fetchInstructions();
   }, []);
 
-  const filteredAndSorted = useMemo(() => {
-    let list = products.filter(p =>
-      p.product_name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+  const handleApprove = async (instructionId) => {
+    if (!window.confirm('Are you sure you want to approve this instruction?')) return;
+    try {
+      const token = localStorage.getItem('token'); // Get the token again
+      
+      const res = await fetch(`${configuration.API_BASE_URL}masterInstructions/${instructionId}/approve`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}` // Send the token
+        }
+      });
 
-    list.sort((a, b) => {
-      let aVal = a[sortField];
-      let bVal = b[sortField];
+      if (!res.ok) throw new Error("Approval failed");
+      alert('Instruction approved!');
+      fetchInstructions();
+    } catch (err) {
+      alert('Approval failed. Please try again.');
+    }
+  };
 
-      if (sortField === 'createdAt' || sortField === 'updatedAt') {
-        aVal = new Date(aVal);
-        bVal = new Date(bVal);
-        return sortOrder === 'asc' ? aVal - bVal : bVal - aVal;
-      }
+  const { pendingInstructions, approvedInstructions } = useMemo(() => {
+    // This check makes your component safer
+    const list = Array.isArray(instructions)
+      ? instructions.filter(p =>
+          p.product_name.toLowerCase().includes(searchTerm.toLowerCase())
+        )
+      : []; // If instructions is not an array, use an empty array
 
-      return sortOrder === 'asc'
-        ? String(aVal || '').localeCompare(String(bVal || ''))
-        : String(bVal || '').localeCompare(String(aVal || ''));
-    });
+    return {
+      pendingInstructions: list.filter(item => item.status === 'pending'),
+      approvedInstructions: list.filter(item => item.status !== 'pending'),
+    };
+  }, [instructions, searchTerm]);
 
-    return list;
-  }, [products, searchTerm, sortField, sortOrder]);
+ 
+
 
   return (
     <div className="container main-container">
       <div className="d-flex justify-content-between align-items-center flex-wrap mb-4">
         <h2 className="mb-2 mb-md-0">Products</h2>
         <div className="d-flex align-items-center gap-2 flex-wrap">
-          <button className="btn btn-primary" onClick={() => setShowDocPopup(true)}>
-            Convert to eBR
-          </button>
-          <input
-            type="text"
-            className="form-control"
-            placeholder="Search product..."
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-            style={{ width: '200px' }}
-          />
-          <select
-            className="form-select"
-            value={sortField}
-            onChange={e => {
-              setSortField(e.target.value);
-              setSortOrder('asc');
-            }}
-            style={{ width: '150px' }}
-          >
-            <option value="product_name">Product Name</option>
-            <option value="created_by">Created By</option>
-            <option value="createdAt">Created At</option>
-            <option value="updatedAt">Updated At</option>
-          </select>
-          <button
-            className="btn btn-outline-secondary"
-            onClick={() => setSortOrder(prev => (prev === 'asc' ? 'desc' : 'asc'))}
-            style={{ display: 'flex', alignItems: 'center', padding: '0.375rem 0.75rem' }}
-          >
-            {sortOrder === 'asc' ? <AiOutlineArrowUp size={20} /> : <AiOutlineArrowDown size={20} />}
-          </button>
+          <button className="btn btn-primary" onClick={() => setShowDocPopup(true)}>Convert to eBR</button>
+          <input type="text" className="form-control" placeholder="Search product..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} style={{ width: '200px' }}/>
         </div>
       </div>
 
-      <div className="row">
-        {filteredAndSorted.map(product => (
-          <div key={product._id} className="col-12 col-sm-6 col-md-4 col-lg-3 mb-4">
-            <div className="card shadow-sm h-100">
-              <div className="card-body d-flex align-items-center justify-content-center">
-                <h5 className="card-title text-center mb-0">{product.product_name}</h5>
+      <div className="mb-5">
+        <h3>Pending Approval ({pendingInstructions.length})</h3>
+        <hr/>
+        <div className="row">
+          {pendingInstructions.length > 0 ? pendingInstructions.map(item => (
+            <div key={item._id} className="col-12 col-sm-6 col-md-4 col-lg-3 mb-4">
+              <div className="card shadow-sm h-100 card-pending">
+                <div className="card-body">
+                  <h5 className="card-title text-center mb-2">{item.product_name}</h5>
+                  <p className="card-text text-muted text-center small">
+                    Approvers: {item.approvers.map(a => a.username).join(', ')}
+                  </p>
+                </div>
+                <div className="card-footer">
+                    <button className="btn btn-success w-100" onClick={() => handleApprove(item._id)}>Approve</button>
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          )) : <p>No items are currently pending approval.</p>}
+        </div>
       </div>
 
-      {showDocPopup && <DocToJsonConverter onClose={() => setShowDocPopup(false)} />}
+      <div>
+        <h3>Approved ({approvedInstructions.length})</h3>
+        <hr/>
+        <div className="row">
+          {approvedInstructions.map(item => (
+            <div key={item._id} className="col-12 col-sm-6 col-md-4 col-lg-3 mb-4">
+              <div className="card shadow-sm h-100">
+                <div className="card-body d-flex align-items-center justify-content-center">
+                  <h5 className="card-title text-center mb-0">{item.product_name}</h5>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {showDocPopup && <DocToJsonConverter onClose={() => setShowDocPopup(false)} onUploadSuccess={fetchInstructions} />}
     </div>
   );
 };
