@@ -59,8 +59,11 @@ export const AppProvider = ({ children }) => {
       if (response.ok && data.token) {
         const decoded = JSON.parse(atob(data.token.split('.')[1]));
 
-        // Do not store userId in localStorage
         const user = {
+          // --- FIX START: SAVE IDS SO PERMISSIONS WORK ---
+          _id: data.user?._id,           // Required for String ID checks
+          userId: data.user?.userId,     // Required for Number ID checks
+          // ----------------------------------------------
           loginId: data.user?.loginId,
           full_name: data.user?.full_name || '',
           role: data.user?.role || decoded.role,
@@ -71,10 +74,8 @@ export const AppProvider = ({ children }) => {
           profile_picture_url: data.user?.profile_picture_url || '',
           status: data.user?.status || 'pending',
           created_at: data.user?.created_at || new Date().toISOString(),
-          // userId is kept in memory, not stored
         };
 
-        // Store user and token (excluding userId)
         dispatch({ type: SET_USER, payload: { user, token: data.token } });
       } else {
         setErrorMessage(data.message || 'Login failed');
@@ -87,11 +88,14 @@ export const AppProvider = ({ children }) => {
 
   const logout = async (email) => {
     try {
-      await fetch(`${configuration.API_BASE_URL || ''}users/logout`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
-      });
+      // Only call API if email exists
+      if(email) {
+        await fetch(`${configuration.API_BASE_URL || ''}users/logout`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email }),
+        });
+      }
     } catch (error) {
       console.error('Logout API error:', error);
     }

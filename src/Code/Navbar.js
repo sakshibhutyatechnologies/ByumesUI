@@ -34,6 +34,9 @@ const Navbar = () => {
     return () => document.removeEventListener('mousedown', onClickOutside);
   }, []);
 
+  // Helper to check permissions for menu visibility
+  const canViewMenu = ['Admin', 'QA', 'Operator'].includes(user?.role);
+
   return (
     <nav className="navbar navbar-expand-lg navbar-dark bg-dark px-3">
       {/* Home icon */}
