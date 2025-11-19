@@ -1,107 +1,131 @@
 import React, { useState, useEffect } from 'react';
-import configuration from '../../configuration';
+import configuration from '../../configuration'; 
 
-const AssignUserModal = ({ mode, instruction, onClose, onAssign }) => {
+const AssignUserModal = ({ instruction, onClose, onAssign }) => {
   const [users, setUsers] = useState([]);
-  const [selectedUser, setSelectedUser] = useState('');
+  const [selectedReviewers, setSelectedReviewers] = useState([]);
   const [selectedApprovers, setSelectedApprovers] = useState([]);
-
-  const isReviewMode = mode === 'reviewer';
-  const title = isReviewMode ? 'Assign Reviewer' : 'Assign Approver(s)';
-
-  // Fetch all users for the dropdown
+  const token = localStorage.getItem('token');
+  
   useEffect(() => {
     async function fetchUsers() {
       try {
-        const token = localStorage.getItem('token');
         const res = await fetch(`${configuration.API_BASE_URL}masterInstructions/users`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (res.ok) {
-          const allUsers = await res.json();
-          // Filter users if necessary (e.g., only QA/Admins for approval)
-          if (isReviewMode) {
-            setUsers(allUsers); // Anyone can be a reviewer
-          } else {
-            setUsers(allUsers.filter(u => u.role === 'Admin' || u.role === 'QA'));
-          }
+          setUsers(await res.json());
         }
       } catch (err) {
         console.error("Failed to fetch users", err);
       }
     }
     fetchUsers();
-  }, [isReviewMode]);
+  }, [token]);
+
+  const toggleReviewer = (userId) => {
+    setSelectedReviewers(prev => 
+      prev.includes(userId) ? prev.filter(id => id !== userId) : [...prev, userId]
+    );
+  };
+
+  const toggleApprover = (userId) => {
+    setSelectedApprovers(prev => 
+      prev.includes(userId) ? prev.filter(id => id !== userId) : [...prev, userId]
+    );
+  };
 
   const handleSubmit = async () => {
-    const token = localStorage.getItem('token');
-    let url = '';
-    let body = {};
-
-    if (isReviewMode) {
-      if (!selectedUser) return alert('Please select a reviewer.');
-      const user = users.find(u => u._id === selectedUser);
-      url = `${configuration.API_BASE_URL}masterInstructions/${instruction._id}/assign-reviewer`;
-      body = { userId: user._id, username: user.full_name };
-    } else {
-      if (selectedApprovers.length === 0) return alert('Please select at least one approver.');
-      const approverDetails = selectedApprovers.map(userId => {
-        const user = users.find(u => u._id === userId);
-        return { user_id: userId, username: user.full_name };
-      });
-      url = `${configuration.API_BASE_URL}masterInstructions/${instruction._id}/assign-approver`;
-      body = { approvers: approverDetails };
-    }
+    if (selectedReviewers.length === 0) return alert('Please select at least one reviewer.');
+    if (selectedApprovers.length === 0) return alert('Please select at least one approver.');
+    
+    const reviewerObjects = selectedReviewers.map(id => {
+      const user = users.find(u => u._id === id);
+      return { user_id: user._id, username: user.full_name };
+    });
+    
+    const approverObjects = selectedApprovers.map(id => {
+      const user = users.find(u => u._id === id);
+      return { user_id: user._id, username: user.full_name };
+    });
 
     try {
-      const res = await fetch(url, {
+      const res = await fetch(`${configuration.API_BASE_URL}masterInstructions/${instruction._id}/assign-workflow`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify(body)
+        body: JSON.stringify({ reviewers: reviewerObjects, approvers: approverObjects })
       });
       if (!res.ok) throw new Error('Assignment failed');
-      onAssign(); // Refresh the main list
+      onAssign(); 
       onClose();
     } catch (err) {
       alert('An error occurred. Please try again.');
     }
   };
 
-  const handleMultiSelect = (e) => {
-    const selected = Array.from(e.target.selectedOptions, option => option.value);
-    setSelectedApprovers(selected);
-  };
+  // Filter users by role
+  const reviewerList = users.filter(u => u.role === 'Reviewer');
+  const approverList = users.filter(u => u.role === 'Approver');
 
   return (
     <div className="doc-popup-overlay">
-      <div className="doc-popup">
+      <div className="doc-popup" style={{ maxWidth: '800px' }}>
         <div className="popup-header">
-          <h2>{title} for "{instruction.product_name}"</h2>
+          <h2>Assign Workflow for "{instruction.product_name}"</h2>
           <button className="close-btn" onClick={onClose}>✖</button>
         </div>
         <div className="popup-content">
-          <div className="approver-section">
-            <label htmlFor="user-select">{isReviewMode ? 'Select Reviewer:' : 'Select Approver(s):'}</label>
-            {isReviewMode ? (
-              <select id="user-select" className="form-select" value={selectedUser} onChange={(e) => setSelectedUser(e.target.value)}>
-                <option value="" disabled>Select a user...</option>
-                {users.map(user => (
-                  <option key={user._id} value={user._id}>{user.full_name} ({user.role})</option>
-                ))}
-              </select>
-            ) : (
-              <select id="user-select" multiple className="form-select" value={selectedApprovers} onChange={handleMultiSelect} style={{ height: '150px' }}>
-                {users.map(user => (
-                  <option key={user._id} value={user._id}>{user.full_name} ({user.role})</option>
-                ))}
-              </select>
-            )}
+          <div className="row">
+            
+            {/* --- MULTI-SELECT FOR REVIEWERS --- */}
+            <div className="col-md-6">
+              <label className="form-label fw-bold">Select Reviewer(s)</label>
+              <div className="border rounded p-2" style={{ maxHeight: '250px', overflowY: 'auto', backgroundColor: '#f9f9f9' }}>
+                {reviewerList.length > 0 ? reviewerList.map(user => (
+                  <div key={user._id} className="d-flex align-items-center mb-2">
+                    <input 
+                      type="checkbox" 
+                      id={`rev-${user._id}`}
+                      className="me-2"
+                      checked={selectedReviewers.includes(user._id)}
+                      onChange={() => toggleReviewer(user._id)}
+                    />
+                    <label htmlFor={`rev-${user._id}`} className="mb-0" style={{ cursor: 'pointer' }}>
+                      {user.full_name}
+                    </label>
+                  </div>
+                )) : <p className="text-muted small">No users with role "Reviewer" found.</p>}
+              </div>
+            </div>
+
+            {/* --- MULTI-SELECT FOR APPROVERS --- */}
+            <div className="col-md-6">
+              <label className="form-label fw-bold">Select Approver(s)</label>
+              <div className="border rounded p-2" style={{ maxHeight: '250px', overflowY: 'auto', backgroundColor: '#f9f9f9' }}>
+                {approverList.length > 0 ? approverList.map(user => (
+                  <div key={user._id} className="d-flex align-items-center mb-2">
+                    <input 
+                      type="checkbox" 
+                      id={`app-${user._id}`}
+                      className="me-2"
+                      checked={selectedApprovers.includes(user._id)}
+                      onChange={() => toggleApprover(user._id)}
+                    />
+                    <label htmlFor={`app-${user._id}`} className="mb-0" style={{ cursor: 'pointer' }}>
+                      {user.full_name}
+                    </label>
+                  </div>
+                )) : <p className="text-muted small">No users with role "Approver" found.</p>}
+              </div>
+            </div>
+
           </div>
+
           <div className="center-controls mt-4">
-            <button className="action-btn" onClick={handleSubmit}>Assign</button>
+            <button className="action-btn" onClick={handleSubmit}>Assign Workflow</button>
           </div>
         </div>
       </div>
